@@ -11,8 +11,8 @@ import bot
 
 
 async def add(ctx, queues: str = None):
-    	""" Add author to channel queues silently """
-    	phrase = await ctx.qc.check_allowed_to_add(ctx, ctx.author)
+	""" add author to channel queues """
+	phrase = await ctx.qc.check_allowed_to_add(ctx, ctx.author)
 
 	targets = queues.lower().split(" ") if queues else []
 	# select the only one queue on the channel
@@ -44,16 +44,16 @@ async def add(ctx, queues: str = None):
 		)))
 
 	if bot.Qr.Success in qr.values():
-        await ctx.qc.update_expire(ctx.author)
-        if phrase:
-            await ctx.author.send(phrase)  # Send confirmation privately
-        await ctx.topic  # Update topic without a message
-    else:
-        await ctx.ignore(content=ctx.qc.topic, embed=error_embed(ctx.qc.gt("Action had no effect."), title=None))
+		await ctx.qc.update_expire(ctx.author)
+		if phrase:
+			await ctx.reply(phrase)
+		await ctx.notice(ctx.qc.topic)
+	else:  # have to give some response for slash commands
+		await ctx.ignore(content=ctx.qc.topic, embed=error_embed(ctx.qc.gt("Action had no effect."), title=None))
 
 
 async def remove(ctx, queues: str = None):
-    """ Remove author from channel queues silently """
+	""" add author from channel queues """
 	targets = queues.lower().split(" ") if queues else []
 
 	if not len(targets):
@@ -66,34 +66,34 @@ async def remove(ctx, queues: str = None):
 		]
 
 	if len(t_queues):
-        for q in t_queues:
-            q.pop_members(ctx.author)
+		for q in t_queues:
+			q.pop_members(ctx.author)
 
-        if not any((q.is_added(ctx.author) for q in ctx.qc.queues)):
-            bot.expire.cancel(ctx.qc, ctx.author)
+		if not any((q.is_added(ctx.author) for q in ctx.qc.queues)):
+			bot.expire.cancel(ctx.qc, ctx.author)
 
-        await ctx.topic  # Update topic without a message
-    else:
-        await ctx.ignore(content=ctx.qc.topic, embed=error_embed(ctx.qc.gt("Action had no effect."), title=None))
+		await ctx.notice(ctx.qc.topic)
+	else:
+		await ctx.ignore(content=ctx.qc.topic, embed=error_embed(ctx.qc.gt("Action had no effect."), title=None))
 
 
-async def status(ctx, queues: str = None):
-    """ Display the number of players in queues """
-    targets = queues.lower().split(" ") if queues else []
+async def who(ctx, queues: str = None):
+	""" List added players """
+	targets = queues.lower().split(" ") if queues else []
 
-    if len(targets):
-        t_queues = [
-            q for q in ctx.qc.queues if
-            any((t == q.name.lower() or t in (a["alias"].lower() for a in q.cfg.aliases) for t in targets))
-        ]
-    else:
-        t_queues = ctx.qc.queues
+	if len(targets):
+		t_queues = [
+			q for q in ctx.qc.queues if
+			any((t == q.name.lower() or t in (a["alias"].lower() for a in q.cfg.aliases) for t in targets))
+		]
+	else:
+		t_queues = [q for q in ctx.qc.queues if len(q.queue)]
 
-    if not len(t_queues):
-        await ctx.reply(f"> {ctx.qc.gt('no queues')}")
-    else:
-        await ctx.reply("\n".join([f"> **{q.name}** ({len(q.queue)} players)" for q in t_queues]))
-	    
+	if not len(t_queues):
+		await ctx.reply(f"> {ctx.qc.gt('no players')}")
+	else:
+		await ctx.reply("\n".join([f"> **{q.name}** ({q.status}) | {q.who}" for q in t_queues]))
+
 
 async def add_player(ctx, player: Member, queue: str):
 	""" Add a player to a queue """
