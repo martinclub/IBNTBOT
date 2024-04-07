@@ -1,6 +1,8 @@
 from nextcord import Embed, Colour, Streaming
 from core.client import dc
 from core.utils import get_nick, join_and
+import random
+import re
 
 
 class Embeds:
@@ -144,10 +146,22 @@ class Embeds:
 			team_players[1] += "\n\u200b"  # Extra empty line
 			embed.add_field(name=teams_names[0], value=team_players[0], inline=False)
 			embed.add_field(name=teams_names[1], value=team_players[1], inline=False)
+			
+			pattern = r"<@\d+>"
+			awayPlayerCount = re.findall(pattern, team_players[0])
+			homePlayerCount = re.findall(pattern, team_players[1])
+			randomIndexAway = random.randint(0, len(awayPlayerCount) - 1)
+			randomIndexHome = random.randint(0, len(homePlayerCount) - 1)
+
 			if self.m.ranked or self.m.cfg['pick_captains']:
 				embed.add_field(
 					name=self.m.gt("Captains"),
 					value=" \u200b " + join_and([self.m.teams[0][0].mention, self.m.teams[1][0].mention]),
+					inline=False
+				)
+				embed.add_field(
+					name=self.m.gt("Default Goalkeepers"),
+					value=" \u200b " + join_and([self.m.teams[0][randomIndexHome].mention, self.m.teams[1][randomIndexAway].mention]),
 					inline=False
 				)
 
